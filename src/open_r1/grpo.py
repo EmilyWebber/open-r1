@@ -91,7 +91,7 @@ SYSTEM_PROMPT = (
 )
 
 
-def main(compiled_model_path, dataset_name):
+def main(compiled_model_path, dataset_name, model_output_dir):
     # Get reward functions
     # reward_funcs = [reward_funcs_registry[func] for func in script_args.reward_funcs]
 
@@ -112,24 +112,19 @@ def main(compiled_model_path, dataset_name):
 
     model = AutoModelForCausalLM.from_pretrained(compiled_model_path)
 
-    # # Initialize the GRPO trainer
-    # trainer = GRPOTrainer(
-    #     model=model_args.model_name_or_path,
-    #     reward_funcs=reward_funcs,
-    #     args=training_args,
-    #     train_dataset=dataset[script_args.dataset_train_split],
-    #     eval_dataset=dataset[script_args.dataset_test_split] if training_args.eval_strategy != "no" else None,
-    #     peft_config=get_peft_config(model_args),
-    # )
+     # Initialize the GRPO trainer
+    trainer = GRPOTrainer(
+        model=model,
+        # reward_funcs=reward_funcs,
+        # args=training_args,
+        train_dataset=dataset['train'],
+        eval_dataset=dataset['test'],
+    )
 
-    # # Train and push the model to the Hub
-    # trainer.train()
+    # Train and push the model to the Hub
+    trainer.train()
 
-    # # Save and push to hub
-    # trainer.save_model(training_args.output_dir)
-    # if training_args.push_to_hub:
-    #     trainer.push_to_hub(dataset_name=script_args.dataset_name)
-
+    trainer.save_model(model_output_dir)
 
 if __name__ == "__main__":
 
@@ -137,4 +132,8 @@ if __name__ == "__main__":
 
     compiled_model_path = '/home/ubuntu/models/traced_qwen'
 
-    main(compiled_model_path, dataset_name)
+    model_output_dir = '/home/ubuntu/models/grpo_qwen'
+
+    main(compiled_model_path, dataset_name, model_output_dir)
+
+
