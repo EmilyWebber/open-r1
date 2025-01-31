@@ -29,9 +29,6 @@ from optimum.neuron import (
     NeuronModelForSequenceClassification as AutoModelForSequenceClassification
 )
 
-
-
-
 def accuracy_reward(completions, solution, **kwargs):
     """Reward function that checks if the completion is the same as the ground truth."""
     contents = [completion[0]["content"] for completion in completions]
@@ -90,10 +87,10 @@ SYSTEM_PROMPT = (
     "<think> reasoning process here </think><answer> answer here </answer>"
 )
 
-
-def main(compiled_model_path, dataset_name, model_output_dir):
+def main(compiled_model_path, dataset_name, model_output_dir, reward_types, training_args):
+    
     # Get reward functions
-    # reward_funcs = [reward_funcs_registry[func] for func in script_args.reward_funcs]
+    reward_funcs = [reward_funcs_registry[func] for func in reward_types]
 
     # Load the dataset
     dataset = load_dataset(dataset_name)
@@ -115,8 +112,7 @@ def main(compiled_model_path, dataset_name, model_output_dir):
      # Initialize the GRPO trainer
     trainer = GRPOTrainer(
         model=model,
-        # reward_funcs=reward_funcs,
-        # args=training_args,
+        reward_funcs=reward_funcs,
         train_dataset=dataset['train'],
         eval_dataset=dataset['test'],
     )
@@ -133,7 +129,15 @@ if __name__ == "__main__":
     compiled_model_path = '/home/ubuntu/models/traced_qwen'
 
     model_output_dir = '/home/ubuntu/models/grpo_qwen'
+    
+    reward_types = ['accuracy', 'format']
 
-    main(compiled_model_path, dataset_name, model_output_dir)
+    # training_args = {"model_init_kwargs":{'max_prompt_length':256,
+    #                 'per_device_train_batch_size': 1,
+    #                 'gradient_accumulation_steps': 16,
+    #                 'logging_steps': 10,
+    #                 'data_type':'bf16'}}
+                    
+    main(compiled_model_path, dataset_name, model_output_dir, reward_types, training_args = {})
 
 
