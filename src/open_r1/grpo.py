@@ -19,23 +19,17 @@ from datasets import load_dataset
 
 from latex2sympy2_extended import NormalizationConfig
 from math_verify import LatexExtractionConfig, parse, verify
-from trl import GRPOConfig, GRPOTrainer, ModelConfig, ScriptArguments, TrlParser, get_peft_config
+
+from trl_x.grpox_config import GRPOConfig
+from trl_x.grpox_trainer import GRPOTrainer
+
+from optimum.neuron import (
+    NeuronModelForCausalLM as AutoModelForCausalLM,
+    NeuronTrainer as Trainer,
+    NeuronModelForSequenceClassification as AutoModelForSequenceClassification
+)
 
 
-@dataclass
-class GRPOScriptArguments(ScriptArguments):
-    """
-    Script arguments for the GRPO training script.
-
-    Args:
-        reward_funcs (`list[str]`):
-            List of reward functions. Possible values: 'accuracy', 'format'.
-    """
-
-    reward_funcs: list[str] = field(
-        default_factory=lambda: ["accuracy", "format"],
-        metadata={"help": "List of reward functions. Possible values: 'accuracy', 'format'"},
-    )
 
 
 def accuracy_reward(completions, solution, **kwargs):
@@ -97,12 +91,12 @@ SYSTEM_PROMPT = (
 )
 
 
-def main(script_args, training_args, model_args):
+def main(compiled_model_path, dataset_name):
     # Get reward functions
-    reward_funcs = [reward_funcs_registry[func] for func in script_args.reward_funcs]
+    # reward_funcs = [reward_funcs_registry[func] for func in script_args.reward_funcs]
 
     # Load the dataset
-    dataset = load_dataset(script_args.dataset_name, name=script_args.dataset_config)
+    dataset = load_dataset(dataset_name)
 
     # Format into conversation
     def make_conversation(example):
@@ -116,26 +110,31 @@ def main(script_args, training_args, model_args):
     dataset = dataset.map(make_conversation)
     dataset = dataset.remove_columns("messages")
 
-    # Initialize the GRPO trainer
-    trainer = GRPOTrainer(
-        model=model_args.model_name_or_path,
-        reward_funcs=reward_funcs,
-        args=training_args,
-        train_dataset=dataset[script_args.dataset_train_split],
-        eval_dataset=dataset[script_args.dataset_test_split] if training_args.eval_strategy != "no" else None,
-        peft_config=get_peft_config(model_args),
-    )
+    model = AutoModelForCausalLM.from_pretrained(compiled_model_path)
 
-    # Train and push the model to the Hub
-    trainer.train()
+    # # Initialize the GRPO trainer
+    # trainer = GRPOTrainer(
+    #     model=model_args.model_name_or_path,
+    #     reward_funcs=reward_funcs,
+    #     args=training_args,
+    #     train_dataset=dataset[script_args.dataset_train_split],
+    #     eval_dataset=dataset[script_args.dataset_test_split] if training_args.eval_strategy != "no" else None,
+    #     peft_config=get_peft_config(model_args),
+    # )
 
-    # Save and push to hub
-    trainer.save_model(training_args.output_dir)
-    if training_args.push_to_hub:
-        trainer.push_to_hub(dataset_name=script_args.dataset_name)
+    # # Train and push the model to the Hub
+    # trainer.train()
+
+    # # Save and push to hub
+    # trainer.save_model(training_args.output_dir)
+    # if training_args.push_to_hub:
+    #     trainer.push_to_hub(dataset_name=script_args.dataset_name)
 
 
 if __name__ == "__main__":
-    parser = TrlParser((GRPOScriptArguments, GRPOConfig, ModelConfig))
-    script_args, training_args, model_args = parser.parse_args_and_config()
-    main(script_args, training_args, model_args)
+
+    dataset_name = 'AI-MO/NuminaMath-TIR'
+
+    compiled_model_path = '/home/ubuntu/models/traced_qwen'
+
+    main(compiled_model_path, dataset_name)
