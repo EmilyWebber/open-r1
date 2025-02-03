@@ -15,8 +15,7 @@
 from dataclasses import dataclass, field
 from typing import Optional
 
-from transformers import TrainingArguments
-
+from optimum.neuron import NeuronTrainingArguments as TrainingArguments
 
 @dataclass
 class GRPOConfig(TrainingArguments):
