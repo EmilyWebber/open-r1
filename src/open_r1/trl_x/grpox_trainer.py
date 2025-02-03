@@ -42,8 +42,6 @@ from transformers.utils import is_peft_available
 
 from trl_x.grpox_config import GRPOConfig
 from trl_x.data_utils import apply_chat_template, is_conversational, maybe_apply_chat_template
-from trl_x.modeling_base import create_reference_model
-
 
 # What we call a reward function is a callable that takes a list of prompts and completions and returns a list of
 # rewards. When it's a string, it's a model ID, so it's loaded as a pretrained model.
@@ -192,7 +190,8 @@ class GRPOTrainer(Trainer):
             self.ref_model = AutoModelForCausalLM.from_pretrained(model_id, **model_init_kwargs)
         elif peft_config is None:
             # If PEFT configuration is not provided, create a reference model based on the initial model.
-            self.ref_model = create_reference_model(model)
+            # self.ref_model = create_reference_model(model)
+            self.ref_model = AutoModelForCausalLM.from_pretrained(model_id, **model_init_kwargs)
         else:
             # If PEFT is used, the reference model is not needed since the adapter can be disabled
             # to revert to the initial model.
@@ -256,7 +255,7 @@ class GRPOTrainer(Trainer):
         # "Could not estimate the number of tokens of the input, floating-point operations will not be computed." To
         # suppress this warning, we set the "estimate_tokens" key in the model's "warnings_issued" dictionary to True.
         # This acts as a flag to indicate that the warning has already been issued.
-        model.warnings_issued["estimate_tokens"] = True
+        # model.warnings_issued["estimate_tokens"] = True
 
         # Initialize the metrics
         self._metrics = defaultdict(list)
@@ -267,7 +266,7 @@ class GRPOTrainer(Trainer):
             data_collator=data_collator,
             train_dataset=train_dataset,
             eval_dataset=eval_dataset,
-            processing_class=processing_class,
+            tokenizer=processing_class,
             callbacks=callbacks,
             optimizers=optimizers,
         )

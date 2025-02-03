@@ -105,13 +105,10 @@ def main(compiled_model_path, dataset_name, model_output_dir, reward_types, trai
         }
 
     dataset = dataset.map(make_conversation)
-    dataset = dataset.remove_columns("messages")
-
-    model = AutoModelForCausalLM.from_pretrained(compiled_model_path)
 
      # Initialize the GRPO trainer
     trainer = GRPOTrainer(
-        model=model,
+        model=compiled_model_path,
         reward_funcs=reward_funcs,
         train_dataset=dataset['train'],
         eval_dataset=dataset['test'],

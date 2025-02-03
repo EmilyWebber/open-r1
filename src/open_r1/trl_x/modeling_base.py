@@ -33,6 +33,12 @@ from transformers import GenerationMixin, PreTrainedModel, is_torch_npu_availabl
 from transformers.utils import is_peft_available
 
 
+from optimum.neuron import (
+    NeuronModelForCausalLM as AutoModelForCausalLM,
+    NeuronTrainer as Trainer,
+    NeuronModelForSequenceClassification as AutoModelForSequenceClassification
+)
+
 if is_peft_available():
     from peft import (
         PeftConfig,
@@ -618,12 +624,15 @@ def create_reference_model(
     Returns:
         `PreTrainedModelWrapper`
     """
+
+
     if is_deepspeed_zero3_enabled():
         raise ValueError(
             "DeepSpeed ZeRO-3 is enabled and is not compatible with `create_reference_model()`. Please instantiate your reference model directly with `AutoModelForCausalLM.from_pretrained()`."
         )
 
     parameter_names = [n for n, _ in model.named_parameters()]
+
     ref_model = deepcopy(model)
 
     # if no layers are shared, return copy of model
