@@ -29,6 +29,8 @@ from optimum.neuron import (
     NeuronModelForSequenceClassification as AutoModelForSequenceClassification
 )
 
+import torch_xla.core.xla_model as xm
+
 from transformers import (
     AutoTokenizer,
     GenerationConfig,

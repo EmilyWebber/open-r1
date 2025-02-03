@@ -29,6 +29,8 @@ from optimum.neuron import (
     NeuronModelForSequenceClassification as AutoModelForSequenceClassification
 )
 
+import torch_xla.core.xla_model as xm
+
 def accuracy_reward(completions, solution, **kwargs):
     """Reward function that checks if the completion is the same as the ground truth."""
     contents = [completion[0]["content"] for completion in completions]
