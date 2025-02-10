@@ -126,6 +126,7 @@ if __name__ == "__main__":
     dataset_name = 'AI-MO/NuminaMath-TIR'
 
     compiled_model_path = '/home/ubuntu/models/traced_qwen'
+    compiled_model_path = "HuggingFaceTB/SmolLM2-135M"
 
     model_output_dir = '/home/ubuntu/models/grpo_qwen'
     
