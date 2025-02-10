@@ -23,24 +23,25 @@ import transformers
 from datasets import Dataset, IterableDataset
 from packaging import version
 
-from optimum.neuron import (
-    NeuronModelForCausalLM as AutoModelForCausalLM,
-    NeuronTrainer as Trainer,
-    NeuronModelForSequenceClassification as AutoModelForSequenceClassification
-)
 
 import torch_xla.core.xla_model as xm
 
 from transformers import (
     AutoTokenizer,
+    AutoModelForCausalLM,
     GenerationConfig,
     PreTrainedModel,
     PreTrainedTokenizerBase,
+    Trainer,
     TrainerCallback,
     is_wandb_available,
 )
 from transformers.integrations.deepspeed import is_deepspeed_zero3_enabled
 from transformers.utils import is_peft_available
+
+from optimum.neuron.trainers import _TrainerForNeuron
+
+from trl import GRPOTrainer as TRLGRPOTrainer
 
 from trl_x.grpox_config import GRPOConfig
 from trl_x.data_utils import apply_chat_template, is_conversational, maybe_apply_chat_template
@@ -49,8 +50,12 @@ from trl_x.data_utils import apply_chat_template, is_conversational, maybe_apply
 # rewards. When it's a string, it's a model ID, so it's loaded as a pretrained model.
 RewardFunc = Union[str, PreTrainedModel, Callable[[list, list], list[float]]]
 
+class _GRPOTrainerTrainerInit(TRLGRPOTrainer):
+    def __init__(self, *args, **kwargs):
+        return Trainer.__init__(self, *args, **kwargs)
 
-class GRPOTrainer(Trainer):
+
+class GRPOTrainer(_TrainerForNeuron, _GRPOTrainerTrainerInit):
     """
     Trainer for the Group Relative Policy Optimization (GRPO) method. This algorithm was initially proposed in the
     paper [DeepSeekMath: Pushing the Limits of Mathematical Reasoning in Open Language Models](https://huggingface.co/papers/2402.03300).
